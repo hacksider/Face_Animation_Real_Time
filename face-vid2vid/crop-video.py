@@ -20,9 +20,7 @@ def extract_bbox(frame, fa):
         scale_factor = 1
     frame = frame[..., :3]
     bboxes = fa.face_detector.detect_from_image(frame[..., ::-1])
-    if len(bboxes) == 0:
-        return []
-    return np.array(bboxes)[:, :-1] * scale_factor
+    return [] if len(bboxes) == 0 else np.array(bboxes)[:, :-1] * scale_factor
 
 
 
@@ -34,8 +32,7 @@ def bb_intersection_over_union(boxA, boxB):
     interArea = max(0, xB - xA + 1) * max(0, yB - yA + 1)
     boxAArea = (boxA[2] - boxA[0] + 1) * (boxA[3] - boxA[1] + 1)
     boxBArea = (boxB[2] - boxB[0] + 1) * (boxB[3] - boxB[1] + 1)
-    iou = interArea / float(boxAArea + boxBArea - interArea)
-    return iou
+    return interArea / float(boxAArea + boxBArea - interArea)
 
 
 def join(tube_bbox, bbox):
@@ -74,7 +71,7 @@ def compute_bbox(start, end, fps, tube_bbox, frame_shape, inp, image_shape, incr
 
 def compute_bbox_trajectories(trajectories, fps, frame_shape, args):
     commands = []
-    for i, (bbox, tube_bbox, start, end) in enumerate(trajectories):
+    for bbox, tube_bbox, start, end in trajectories:
         if (end - start) > args.min_frames:
             command = compute_bbox(start, end, fps, tube_bbox, frame_shape, inp=args.inp, image_shape=args.image_shape, increase_area=args.increase)
             commands.append(command)

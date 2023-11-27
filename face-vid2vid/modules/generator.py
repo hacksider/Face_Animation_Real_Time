@@ -37,7 +37,10 @@ class OcclusionAwareGenerator(nn.Module):
 
         self.resblocks_3d = torch.nn.Sequential()
         for i in range(num_resblocks):
-            self.resblocks_3d.add_module('3dr' + str(i), ResBlock3d(reshape_channel, kernel_size=3, padding=1))
+            self.resblocks_3d.add_module(
+                f'3dr{str(i)}',
+                ResBlock3d(reshape_channel, kernel_size=3, padding=1),
+            )
 
         out_features = block_expansion * (2 ** (num_down_blocks))
         self.third = SameBlock2d(max_features, out_features, kernel_size=(3, 3), padding=(1, 1), lrelu=True)
@@ -45,7 +48,9 @@ class OcclusionAwareGenerator(nn.Module):
 
         self.resblocks_2d = torch.nn.Sequential()
         for i in range(num_resblocks):
-            self.resblocks_2d.add_module('2dr' + str(i), ResBlock2d(out_features, kernel_size=3, padding=1))
+            self.resblocks_2d.add_module(
+                f'2dr{str(i)}', ResBlock2d(out_features, kernel_size=3, padding=1)
+            )
 
         up_blocks = []
         for i in range(num_down_blocks):
@@ -187,7 +192,10 @@ class OcclusionAwareSPADEGenerator(nn.Module):
 
         self.resblocks_3d = torch.nn.Sequential()
         for i in range(num_resblocks):
-            self.resblocks_3d.add_module('3dr' + str(i), ResBlock3d(reshape_channel, kernel_size=3, padding=1))
+            self.resblocks_3d.add_module(
+                f'3dr{str(i)}',
+                ResBlock3d(reshape_channel, kernel_size=3, padding=1),
+            )
 
         out_features = block_expansion * (2 ** (num_down_blocks))
         self.third = SameBlock2d(max_features, out_features, kernel_size=(3, 3), padding=(1, 1), lrelu=True)

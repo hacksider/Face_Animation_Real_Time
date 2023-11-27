@@ -21,14 +21,8 @@ def _crop(image, boxes, labels, landm, img_dim):
         w = int(scale * short_side)
         h = w
 
-        if width == w:
-            l = 0
-        else:
-            l = random.randrange(width - w)
-        if height == h:
-            t = 0
-        else:
-            t = random.randrange(height - h)
+        l = 0 if width == w else random.randrange(width - w)
+        t = 0 if height == h else random.randrange(height - h)
         roi = np.array((l, t, l + w, t + h))
 
         value = matrix_iof(boxes, roi[np.newaxis])

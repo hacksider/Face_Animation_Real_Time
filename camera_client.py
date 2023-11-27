@@ -35,7 +35,7 @@ async def send_image(image, ScreenSize=512, SendSize=256):
     print("Image size: ", len(image_bytes))
 
     # Connect to the FastAPI WebSocket server
-    async with websockets.connect("ws://localhost:{}/ws".format(websocket_port)) as websocket:
+    async with websockets.connect(f"ws://localhost:{websocket_port}/ws") as websocket:
         # Send the image to the server
         await websocket.send(image_bytes)
         print("Image sent to the server")

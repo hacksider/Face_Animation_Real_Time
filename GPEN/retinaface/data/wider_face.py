@@ -45,7 +45,7 @@ class WiderFaceDetection(data.Dataset):
         annotations = np.zeros((0, 15))
         if len(labels) == 0:
             return annotations
-        for idx, label in enumerate(labels):
+        for label in labels:
             annotation = np.zeros((1, 15))
             # bbox
             annotation[0, 0] = label[0]  # x1
@@ -64,11 +64,7 @@ class WiderFaceDetection(data.Dataset):
             annotation[0, 11] = label[14]  # l3_y
             annotation[0, 12] = label[16]  # l4_x
             annotation[0, 13] = label[17]  # l4_y
-            if (annotation[0, 4]<0):
-                annotation[0, 14] = -1
-            else:
-                annotation[0, 14] = 1
-
+            annotation[0, 14] = -1 if (annotation[0, 4]<0) else 1
             annotations = np.append(annotations, annotation, axis=0)
         target = np.array(annotations)
         if self.preproc is not None:
@@ -90,8 +86,8 @@ def detection_collate(batch):
     """
     targets = []
     imgs = []
-    for _, sample in enumerate(batch):
-        for _, tup in enumerate(sample):
+    for sample in batch:
+        for tup in sample:
             if torch.is_tensor(tup):
                 imgs.append(tup)
             elif isinstance(tup, type(np.empty(0))):

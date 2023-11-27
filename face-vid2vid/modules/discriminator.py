@@ -16,10 +16,7 @@ class DownBlock2d(nn.Module):
         if sn:
             self.conv = nn.utils.spectral_norm(self.conv)
 
-        if norm:
-            self.norm = nn.InstanceNorm2d(out_features, affine=True)
-        else:
-            self.norm = None
+        self.norm = nn.InstanceNorm2d(out_features, affine=True) if norm else None
         self.pool = pool
 
     def forward(self, x):
@@ -42,13 +39,19 @@ class Discriminator(nn.Module):
                  sn=False, **kwargs):
         super(Discriminator, self).__init__()
 
-        down_blocks = []
-        for i in range(num_blocks):
-            down_blocks.append(
-                DownBlock2d(num_channels if i == 0 else min(max_features, block_expansion * (2 ** i)),
-                            min(max_features, block_expansion * (2 ** (i + 1))),
-                            norm=(i != 0), kernel_size=4, pool=(i != num_blocks - 1), sn=sn))
-
+        down_blocks = [
+            DownBlock2d(
+                num_channels
+                if i == 0
+                else min(max_features, block_expansion * (2**i)),
+                min(max_features, block_expansion * (2 ** (i + 1))),
+                norm=(i != 0),
+                kernel_size=4,
+                pool=(i != num_blocks - 1),
+                sn=sn,
+            )
+            for i in range(num_blocks)
+        ]
         self.down_blocks = nn.ModuleList(down_blocks)
         self.conv = nn.Conv2d(self.down_blocks[-1].conv.out_channels, out_channels=1, kernel_size=1)
         if sn:
@@ -74,17 +77,18 @@ class MultiScaleDiscriminator(nn.Module):
     def __init__(self, scales=(), **kwargs):
         super(MultiScaleDiscriminator, self).__init__()
         self.scales = scales
-        discs = {}
-        for scale in scales:
-            discs[str(scale).replace('.', '-')] = Discriminator(**kwargs)
+        discs = {
+            str(scale).replace('.', '-'): Discriminator(**kwargs)
+            for scale in scales
+        }
         self.discs = nn.ModuleDict(discs)
 
     def forward(self, x):
         out_dict = {}
         for scale, disc in self.discs.items():
             scale = str(scale).replace('-', '.')
-            key = 'prediction_' + scale
+            key = f'prediction_{scale}'
             feature_maps, prediction_map = disc(x[key])
-            out_dict['feature_maps_' + scale] = feature_maps
-            out_dict['prediction_map_' + scale] = prediction_map
+            out_dict[f'feature_maps_{scale}'] = feature_maps
+            out_dict[f'prediction_map_{scale}'] = prediction_map
         return out_dict

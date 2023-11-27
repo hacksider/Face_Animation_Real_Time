@@ -29,7 +29,7 @@ class Logger:
         loss_mean = np.array(self.loss_list).mean(axis=0)
 
         loss_string = "; ".join(["%s - %.5f" % (name, value) for name, value in zip(loss_names, loss_mean)])
-        loss_string = str(self.epoch).zfill(self.zfill_num) + ") " + loss_string
+        loss_string = f"{str(self.epoch).zfill(self.zfill_num)}) {loss_string}"
 
         print(loss_string, file=self.log_file)
         self.loss_list = []
@@ -37,12 +37,21 @@ class Logger:
 
     def visualize_rec(self, inp, out):
         image = self.visualizer.visualize(inp["driving"], inp["source"], out)
-        imageio.imsave(os.path.join(self.visualizations_dir, "%s-rec.png" % str(self.epoch).zfill(self.zfill_num)), image)
+        imageio.imsave(
+            os.path.join(
+                self.visualizations_dir,
+                f"{str(self.epoch).zfill(self.zfill_num)}-rec.png",
+            ),
+            image,
+        )
 
     def save_cpk(self, emergent=False):
         cpk = {k: v.state_dict() for k, v in self.models.items()}
         cpk["epoch"] = self.epoch
-        cpk_path = os.path.join(self.cpk_dir, "%s-checkpoint.pth.tar" % str(self.epoch).zfill(self.zfill_num))
+        cpk_path = os.path.join(
+            self.cpk_dir,
+            f"{str(self.epoch).zfill(self.zfill_num)}-checkpoint.pth.tar",
+        )
         if not (os.path.exists(cpk_path) and emergent):
             torch.save(cpk, cpk_path)
 
@@ -144,14 +153,11 @@ class Visualizer:
         return np.concatenate(out, axis=1)
 
     def visualize(self, driving, source, out):
-        images = []
-
         # Source image with keypoints
         source = source.data.cpu()
         kp_source = out["kp_source"]["value"][:, :, :2].data.cpu().numpy()  # 3d -> 2d
         source = np.transpose(source, [0, 2, 3, 1])
-        images.append((source, kp_source))
-
+        images = [(source, kp_source)]
         # Equivariance visualization
         if "transformed_frame" in out:
             transformed = out["transformed_frame"].data.cpu().numpy()

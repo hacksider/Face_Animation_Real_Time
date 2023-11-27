@@ -57,12 +57,10 @@ def load_checkpoints(config_path, checkpoint_path):
 
 def headpose_pred_to_degree(pred):
     device = pred.device
-    idx_tensor = [idx for idx in range(66)]
+    idx_tensor = list(range(66))
     idx_tensor = torch.FloatTensor(idx_tensor).to(device)
     pred = F.softmax(pred, dim=1)
-    degree = torch.sum(pred * idx_tensor, axis=1) * 3 - 99
-
-    return degree
+    return torch.sum(pred * idx_tensor, axis=1) * 3 - 99
 
 
 def get_rotation_matrix(yaw, pitch, roll):
@@ -122,9 +120,7 @@ def get_rotation_matrix(yaw, pitch, roll):
     )
     roll_mat = roll_mat.view(roll_mat.shape[0], 3, 3)
 
-    rot_mat = torch.einsum("bij,bjk,bkm->bim", pitch_mat, yaw_mat, roll_mat)
-
-    return rot_mat
+    return torch.einsum("bij,bjk,bkm->bim", pitch_mat, yaw_mat, roll_mat)
 
 
 def keypoint_transformation(kp_canonical, he, estimate_jacobian=False, free_view=False, yaw=0, pitch=0, roll=0, output_coord=False):
@@ -291,15 +287,12 @@ class FaceAnimationClass:
             if self.first_frame:
                 self._process_first_frame(frame)
                 self.first_frame = False
-            else:
-                pass
             if self.n_frame % self.detect_interval == 0:
                 faces = self.face_detector(frame, cv=True)
                 if len(faces) == 0:
                     raise ValueError("Face is not detected")
-                else:
-                    self.coords = faces[0][0]
-                    self.coords = smooth_coord(self.last_coords, self.coords, self.smooth_factor)
+                self.coords = faces[0][0]
+                self.coords = smooth_coord(self.last_coords, self.coords, self.smooth_factor)
             face = get_square_face(self.coords, frame)
             self.last_coords = self.coords
             face_input = self._conver_input_frame(face)

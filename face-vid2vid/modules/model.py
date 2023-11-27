@@ -48,8 +48,7 @@ class Vgg19(torch.nn.Module):
         h_relu3 = self.slice3(h_relu2)
         h_relu4 = self.slice4(h_relu3)
         h_relu5 = self.slice5(h_relu4)
-        out = [h_relu1, h_relu2, h_relu3, h_relu4, h_relu5]
-        return out
+        return [h_relu1, h_relu2, h_relu3, h_relu4, h_relu5]
 
 
 class ImagePyramide(torch.nn.Module):
@@ -58,16 +57,19 @@ class ImagePyramide(torch.nn.Module):
     """
     def __init__(self, scales, num_channels):
         super(ImagePyramide, self).__init__()
-        downs = {}
-        for scale in scales:
-            downs[str(scale).replace('.', '-')] = AntiAliasInterpolation2d(num_channels, scale)
+        downs = {
+            str(scale).replace('.', '-'): AntiAliasInterpolation2d(
+                num_channels, scale
+            )
+            for scale in scales
+        }
         self.downs = nn.ModuleDict(downs)
 
     def forward(self, x):
-        out_dict = {}
-        for scale, down_module in self.downs.items():
-            out_dict['prediction_' + str(scale).replace('-', '.')] = down_module(x)
-        return out_dict
+        return {
+            'prediction_' + str(scale).replace('-', '.'): down_module(x)
+            for scale, down_module in self.downs.items()
+        }
 
 
 class Transform:
@@ -118,8 +120,7 @@ class Transform:
         new_coordinates = self.warp_coordinates(coordinates)
         grad_x = grad(new_coordinates[..., 0].sum(), coordinates, create_graph=True)
         grad_y = grad(new_coordinates[..., 1].sum(), coordinates, create_graph=True)
-        jacobian = torch.cat([grad_x[0].unsqueeze(-2), grad_y[0].unsqueeze(-2)], dim=-2)
-        return jacobian
+        return torch.cat([grad_x[0].unsqueeze(-2), grad_y[0].unsqueeze(-2)], dim=-2)
 
 
 def detach_kp(kp):
@@ -128,12 +129,10 @@ def detach_kp(kp):
 
 def headpose_pred_to_degree(pred):
     device = pred.device
-    idx_tensor = [idx for idx in range(66)]
+    idx_tensor = list(range(66))
     idx_tensor = torch.FloatTensor(idx_tensor).to(device)
     pred = F.softmax(pred)
-    degree = torch.sum(pred*idx_tensor, axis=1) * 3 - 99
-
-    return degree
+    return torch.sum(pred*idx_tensor, axis=1) * 3 - 99
 
 '''
 # beta version
@@ -190,9 +189,7 @@ def get_rotation_matrix(yaw, pitch, roll):
                          torch.zeros_like(roll), torch.zeros_like(roll), torch.ones_like(roll)], dim=1)
     roll_mat = roll_mat.view(roll_mat.shape[0], 3, 3)
 
-    rot_mat = torch.einsum('bij,bjk,bkm->bim', pitch_mat, yaw_mat, roll_mat)
-
-    return rot_mat
+    return torch.einsum('bij,bjk,bkm->bim', pitch_mat, yaw_mat, roll_mat)
 
 def keypoint_transformation(kp_canonical, he, estimate_jacobian=True):
     kp = kp_canonical['value']    # (bs, k, 3)
@@ -282,8 +279,8 @@ class GeneratorFullModel(torch.nn.Module):
         if sum(self.loss_weights['perceptual']) != 0:
             value_total = 0
             for scale in self.scales:
-                x_vgg = self.vgg(pyramide_generated['prediction_' + str(scale)])
-                y_vgg = self.vgg(pyramide_real['prediction_' + str(scale)])
+                x_vgg = self.vgg(pyramide_generated[f'prediction_{str(scale)}'])
+                y_vgg = self.vgg(pyramide_real[f'prediction_{str(scale)}'])
 
                 for i, weight in enumerate(self.loss_weights['perceptual']):
                     value = torch.abs(x_vgg[i] - y_vgg[i].detach()).mean()
@@ -295,13 +292,13 @@ class GeneratorFullModel(torch.nn.Module):
             discriminator_maps_real = self.discriminator(pyramide_real)
             value_total = 0
             for scale in self.disc_scales:
-                key = 'prediction_map_%s' % scale
+                key = f'prediction_map_{scale}'
                 if self.train_params['gan_mode'] == 'hinge':
                     value = -torch.mean(discriminator_maps_generated[key])
                 elif self.train_params['gan_mode'] == 'ls':
                     value = ((1 - discriminator_maps_generated[key]) ** 2).mean()
                 else:
-                    raise ValueError('Unexpected gan_mode {}'.format(self.train_params['gan_mode']))
+                    raise ValueError(f"Unexpected gan_mode {self.train_params['gan_mode']}")
 
                 value_total += self.loss_weights['generator_gan'] * value
             loss_values['gen_gan'] = value_total
@@ -309,7 +306,7 @@ class GeneratorFullModel(torch.nn.Module):
             if sum(self.loss_weights['feature_matching']) != 0:
                 value_total = 0
                 for scale in self.disc_scales:
-                    key = 'feature_maps_%s' % scale
+                    key = f'feature_maps_{scale}'
                     for i, (a, b) in enumerate(zip(discriminator_maps_real[key], discriminator_maps_generated[key])):
                         if self.loss_weights['feature_matching'][i] == 0:
                             continue
@@ -343,7 +340,7 @@ class GeneratorFullModel(torch.nn.Module):
                 transformed_jacobian_2d = transformed_kp['jacobian'][:, :, :2, :2]
                 jacobian_transformed = torch.matmul(transform.jacobian(transformed_kp_2d),
                                                     transformed_jacobian_2d)
-                
+
                 jacobian_2d = kp_driving['jacobian'][:, :, :2, :2]
                 normed_driving = torch.inverse(jacobian_2d)
                 normed_transformed = jacobian_transformed
@@ -429,18 +426,15 @@ class DiscriminatorFullModel(torch.nn.Module):
         discriminator_maps_generated = self.discriminator(pyramide_generated)
         discriminator_maps_real = self.discriminator(pyramide_real)
 
-        loss_values = {}
         value_total = 0
         for scale in self.scales:
-            key = 'prediction_map_%s' % scale
+            key = f'prediction_map_{scale}'
             if self.train_params['gan_mode'] == 'hinge':
                 value = -torch.mean(torch.min(discriminator_maps_real[key]-1, self.get_zero_tensor(discriminator_maps_real[key]))) - torch.mean(torch.min(-discriminator_maps_generated[key]-1, self.get_zero_tensor(discriminator_maps_generated[key])))
             elif self.train_params['gan_mode'] == 'ls':
                 value = ((1 - discriminator_maps_real[key]) ** 2 + discriminator_maps_generated[key] ** 2).mean()
             else:
-                raise ValueError('Unexpected gan_mode {}'.format(self.train_params['gan_mode']))
+                raise ValueError(f"Unexpected gan_mode {self.train_params['gan_mode']}")
 
             value_total += self.loss_weights['discriminator_gan'] * value
-        loss_values['disc_gan'] = value_total
-
-        return loss_values
+        return {'disc_gan': value_total}

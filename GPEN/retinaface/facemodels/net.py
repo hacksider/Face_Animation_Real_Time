@@ -41,9 +41,7 @@ class SSH(nn.Module):
     def __init__(self, in_channel, out_channel):
         super(SSH, self).__init__()
         assert out_channel % 4 == 0
-        leaky = 0
-        if (out_channel <= 64):
-            leaky = 0.1
+        leaky = 0.1 if (out_channel <= 64) else 0
         self.conv3X3 = conv_bn_no_relu(in_channel, out_channel//2, stride=1)
 
         self.conv5X5_1 = conv_bn(in_channel, out_channel//4, stride=1, leaky = leaky)
@@ -68,9 +66,7 @@ class SSH(nn.Module):
 class FPN(nn.Module):
     def __init__(self,in_channels_list,out_channels):
         super(FPN,self).__init__()
-        leaky = 0
-        if (out_channels <= 64):
-            leaky = 0.1
+        leaky = 0.1 if (out_channels <= 64) else 0
         self.output1 = conv_bn1X1(in_channels_list[0], out_channels, stride = 1, leaky = leaky)
         self.output2 = conv_bn1X1(in_channels_list[1], out_channels, stride = 1, leaky = leaky)
         self.output3 = conv_bn1X1(in_channels_list[2], out_channels, stride = 1, leaky = leaky)
@@ -94,8 +90,7 @@ class FPN(nn.Module):
         output1 = output1 + up2
         output1 = self.merge1(output1)
 
-        out = [output1, output2, output3]
-        return out
+        return [output1, output2, output3]
 
 
 

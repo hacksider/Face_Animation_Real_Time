@@ -19,7 +19,7 @@ class RetinaFaceDetection(object):
     def __init__(self, base_dir, network='RetinaFace-R50'):
         torch.set_grad_enabled(False)
         cudnn.benchmark = True
-        self.pretrained_path = os.path.join(base_dir, 'weights', network+'.pth')
+        self.pretrained_path = os.path.join(base_dir, 'weights', f'{network}.pth')
         self.device = torch.cuda.current_device()
         self.cfg = cfg_re50
         self.net = RetinaFace(cfg=self.cfg, phase='test')

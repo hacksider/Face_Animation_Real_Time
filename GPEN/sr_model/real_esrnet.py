@@ -21,7 +21,7 @@ class RealESRNet(object):
         if model is None:
             loadnet = torch.load(os.path.join(self.base_dir, 'weights', 'realesrnet_x2.pth'))
         else:
-            loadnet = torch.load(os.path.join(self.base_dir, 'weights', model+'.pth'))
+            loadnet = torch.load(os.path.join(self.base_dir, 'weights', f'{model}.pth'))
         self.srmodel.load_state_dict(loadnet['params_ema'], strict=True)
         self.srmodel.eval()
         self.srmodel = self.srmodel.cuda()

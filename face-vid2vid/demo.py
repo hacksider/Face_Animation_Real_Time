@@ -70,12 +70,10 @@ def load_checkpoints(config_path, checkpoint_path, gen, cpu=False):
 
 def headpose_pred_to_degree(pred):
     device = pred.device
-    idx_tensor = [idx for idx in range(66)]
+    idx_tensor = list(range(66))
     idx_tensor = torch.FloatTensor(idx_tensor).to(device)
     pred = F.softmax(pred)
-    degree = torch.sum(pred*idx_tensor, axis=1) * 3 - 99
-
-    return degree
+    return torch.sum(pred*idx_tensor, axis=1) * 3 - 99
 
 '''
 # beta version
@@ -132,9 +130,7 @@ def get_rotation_matrix(yaw, pitch, roll):
                          torch.zeros_like(roll), torch.zeros_like(roll), torch.ones_like(roll)], dim=1)
     roll_mat = roll_mat.view(roll_mat.shape[0], 3, 3)
 
-    rot_mat = torch.einsum('bij,bjk,bkm->bim', pitch_mat, yaw_mat, roll_mat)
-
-    return rot_mat
+    return torch.einsum('bij,bjk,bkm->bim', pitch_mat, yaw_mat, roll_mat)
 
 def keypoint_transformation(kp_canonical, he, estimate_jacobian=True, free_view=False, yaw=0, pitch=0, roll=0):
     kp = kp_canonical['value']
@@ -247,7 +243,7 @@ if __name__ == "__main__":
     parser.add_argument("--result_video", default='', help="path to output")
 
     parser.add_argument("--gen", default="spade", choices=["original", "spade"])
- 
+
     parser.add_argument("--relative", dest="relative", action="store_true", help="use relative or absolute keypoint coordinates")
     parser.add_argument("--adapt_scale", dest="adapt_scale", action="store_true", help="adapt movement scale based on convex hull of keypoints")
 
@@ -256,14 +252,14 @@ if __name__ == "__main__":
 
     parser.add_argument("--best_frame", dest="best_frame", type=int, default=None,  
                         help="Set frame to start from.")
- 
+
     parser.add_argument("--cpu", dest="cpu", action="store_true", help="cpu mode.")
 
     parser.add_argument("--free_view", dest="free_view", action="store_true", help="control head pose")
     parser.add_argument("--yaw", dest="yaw", type=int, default=None, help="yaw")
     parser.add_argument("--pitch", dest="pitch", type=int, default=None, help="pitch")
     parser.add_argument("--roll", dest="roll", type=int, default=None, help="roll")
- 
+
 
     parser.set_defaults(relative=False)
     parser.set_defaults(adapt_scale=False)
@@ -276,8 +272,7 @@ if __name__ == "__main__":
     fps = reader.get_meta_data()['fps']
     driving_video = []
     try:
-        for im in reader:
-            driving_video.append(im)
+        driving_video.extend(iter(reader))
     except RuntimeError:
         pass
     reader.close()
@@ -293,9 +288,9 @@ if __name__ == "__main__":
 
     if opt.find_best_frame or opt.best_frame is not None:
         i = opt.best_frame if opt.best_frame is not None else find_best_frame(source_image, driving_video, cpu=opt.cpu)
-        print ("Best frame: " + str(i))
-        driving_forward = driving_video[i:]
+        print(f"Best frame: {str(i)}")
         driving_backward = driving_video[:(i+1)][::-1]
+        driving_forward = driving_video[i:]
         predictions_forward = make_animation(source_image, driving_forward, generator, kp_detector, he_estimator, relative=opt.relative, adapt_movement_scale=opt.adapt_scale, estimate_jacobian=estimate_jacobian, cpu=opt.cpu, free_view=opt.free_view, yaw=opt.yaw, pitch=opt.pitch, roll=opt.roll)
         predictions_backward = make_animation(source_image, driving_backward, generator, kp_detector, he_estimator, relative=opt.relative, adapt_movement_scale=opt.adapt_scale, estimate_jacobian=estimate_jacobian, cpu=opt.cpu, free_view=opt.free_view, yaw=opt.yaw, pitch=opt.pitch, roll=opt.roll)
         predictions = predictions_backward[::-1] + predictions_forward[1:]

@@ -127,10 +127,7 @@ class RandomResize(object):
         new_w = int(im_w * scaling_factor)
         new_h = int(im_h * scaling_factor)
         new_size = (new_w, new_h)
-        resized = resize_clip(
-            clip, new_size, interpolation=self.interpolation)
-
-        return resized
+        return resize_clip(clip, new_size, interpolation=self.interpolation)
 
 
 class RandomCrop(object):
@@ -167,9 +164,7 @@ class RandomCrop(object):
         im_h, im_w = clip.shape[1:3]
         x1 = 0 if h == im_h else random.randint(0, im_w - w)
         y1 = 0 if w == im_w else random.randint(0, im_h - h)
-        cropped = crop_clip(clip, y1, x1, h, w)
-
-        return cropped
+        return crop_clip(clip, y1, x1, h, w)
 
 
 class RandomRotation(object):
@@ -186,11 +181,11 @@ class RandomRotation(object):
             if degrees < 0:
                 raise ValueError('If degrees is a single number,'
                                  'must be positive')
-            degrees = (-degrees, degrees)
-        else:
-            if len(degrees) != 2:
-                raise ValueError('If degrees is a sequence,'
-                                 'it must be of len 2.')
+            else:
+                degrees = (-degrees, degrees)
+        elif len(degrees) != 2:
+            raise ValueError('If degrees is a sequence,'
+                             'it must be of len 2.')
 
         self.degrees = degrees
 
@@ -252,10 +247,7 @@ class ColorJitter(object):
         else:
             saturation_factor = None
 
-        if hue > 0:
-            hue_factor = random.uniform(-hue, hue)
-        else:
-            hue_factor = None
+        hue_factor = random.uniform(-hue, hue) if hue > 0 else None
         return brightness_factor, contrast_factor, saturation_factor, hue_factor
 
     def __call__(self, clip):

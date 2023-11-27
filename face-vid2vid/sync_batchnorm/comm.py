@@ -116,9 +116,7 @@ class SyncMaster(object):
         self._activated = True
 
         intermediates = [(0, master_msg)]
-        for i in range(self.nr_slaves):
-            intermediates.append(self._queue.get())
-
+        intermediates.extend(self._queue.get() for _ in range(self.nr_slaves))
         results = self._master_callback(intermediates)
         assert results[0][0] == 0, 'The first result should belongs to the master.'
 
@@ -127,7 +125,7 @@ class SyncMaster(object):
                 continue
             self._registry[i].result.put(res)
 
-        for i in range(self.nr_slaves):
+        for _ in range(self.nr_slaves):
             assert self._queue.get() is True
 
         return results[0][1]

@@ -49,9 +49,7 @@ class KPDetector(nn.Module):
         heatmap = heatmap.unsqueeze(-1)
         grid = make_coordinate_grid(shape[2:], heatmap.type()).unsqueeze_(0).unsqueeze_(0)
         value = (heatmap * grid).sum(dim=(2, 3, 4))
-        kp = {'value': value}
-
-        return kp
+        return {'value': value}
 
     def forward(self, x):
         if self.scale_factor != 1:
@@ -99,7 +97,9 @@ class HEEstimator(nn.Module):
 
         self.block1 = nn.Sequential()
         for i in range(3):
-            self.block1.add_module('b1_'+ str(i), ResBottleneck(in_features=256, stride=1))
+            self.block1.add_module(
+                f'b1_{str(i)}', ResBottleneck(in_features=256, stride=1)
+            )
 
         self.conv3 = nn.Conv2d(in_channels=256, out_channels=512, kernel_size=1)
         self.norm3 = BatchNorm2d(512, affine=True)
@@ -107,7 +107,9 @@ class HEEstimator(nn.Module):
 
         self.block3 = nn.Sequential()
         for i in range(3):
-            self.block3.add_module('b3_'+ str(i), ResBottleneck(in_features=512, stride=1))
+            self.block3.add_module(
+                f'b3_{str(i)}', ResBottleneck(in_features=512, stride=1)
+            )
 
         self.conv4 = nn.Conv2d(in_channels=512, out_channels=1024, kernel_size=1)
         self.norm4 = BatchNorm2d(1024, affine=True)
@@ -115,7 +117,9 @@ class HEEstimator(nn.Module):
 
         self.block5 = nn.Sequential()
         for i in range(5):
-            self.block5.add_module('b5_'+ str(i), ResBottleneck(in_features=1024, stride=1))
+            self.block5.add_module(
+                f'b5_{str(i)}', ResBottleneck(in_features=1024, stride=1)
+            )
 
         self.conv5 = nn.Conv2d(in_channels=1024, out_channels=2048, kernel_size=1)
         self.norm5 = BatchNorm2d(2048, affine=True)
@@ -123,7 +127,9 @@ class HEEstimator(nn.Module):
 
         self.block7 = nn.Sequential()
         for i in range(2):
-            self.block7.add_module('b7_'+ str(i), ResBottleneck(in_features=2048, stride=1))
+            self.block7.add_module(
+                f'b7_{str(i)}', ResBottleneck(in_features=2048, stride=1)
+            )
 
         self.fc_roll = nn.Linear(2048, num_bins)
         self.fc_pitch = nn.Linear(2048, num_bins)

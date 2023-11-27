@@ -54,7 +54,7 @@ if __name__ == "__main__":
         cv2.namedWindow("Face Animation", cv2.WINDOW_NORMAL)
     else:
         video_path = args.driving_video
-        print("Using driving video: {}".format(video_path))
+        print(f"Using driving video: {video_path}")
     camera = VideoCamera(video_path=video_path)
     faceanimation = FaceAnimationClass(source_image_path=args.source_image, use_sr=restore_face)
 
@@ -92,4 +92,4 @@ if __name__ == "__main__":
         for frame in tqdm(frames):
             writer.append_data(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
         writer.close()
-        print("Video saved to {}".format(args.result_video))
+        print(f"Video saved to {args.result_video}")

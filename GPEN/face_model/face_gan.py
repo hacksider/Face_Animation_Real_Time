@@ -15,7 +15,7 @@ import torch
 
 class FaceGAN(object):
     def __init__(self, base_dir='./', size=512, model=None, channel_multiplier=2, narrow=1, is_norm=True):
-        self.mfile = os.path.join(base_dir, 'weights', model+'.pth')
+        self.mfile = os.path.join(base_dir, 'weights', f'{model}.pth')
         self.n_mlp = 8
         self.is_norm = is_norm
         self.resolution = size

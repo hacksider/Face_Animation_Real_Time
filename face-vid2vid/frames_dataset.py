@@ -47,7 +47,7 @@ def read_video(name, frame_shape):
             video = video[..., :3]
         video_array = img_as_float32(video)
     else:
-        raise Exception("Unknown file extensions  %s" % name)
+        raise Exception(f"Unknown file extensions  {name}")
 
     return video_array
 
@@ -82,11 +82,7 @@ class FramesDataset(Dataset):
             print("Use random train-test split.")
             train_videos, test_videos = train_test_split(self.videos, random_state=random_seed, test_size=0.2)
 
-        if is_train:
-            self.videos = train_videos
-        else:
-            self.videos = test_videos
-
+        self.videos = train_videos if is_train else test_videos
         self.is_train = is_train
 
         if self.is_train:
@@ -98,11 +94,10 @@ class FramesDataset(Dataset):
         return len(self.videos)
 
     def __getitem__(self, idx):
+        name = self.videos[idx]
         if self.is_train and self.id_sampling:
-            name = self.videos[idx]
             path = np.random.choice(glob.glob(os.path.join(self.root_dir, name + '*.mp4')))
         else:
-            name = self.videos[idx]
             path = os.path.join(self.root_dir, name)
 
         video_name = os.path.basename(path)
